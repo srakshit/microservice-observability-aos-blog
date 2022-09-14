@@ -3,69 +3,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: This template deploys a VPC, with a pair of public and private subnets spread across three Availability Zones. In addition to the network components, the following will also be created (AWS Cloud9, Amazon OpenSearch Service and Reverse-Proxy Instance).
 
 Parameters:
-  # VPC Variables
-  EnvironmentName:
-    Description: An environment name that is prefixed to resource names
-    Type: String
-    Default: VPC-Observability
-
-  VpcCIDR:
-    Description: Please enter the IP range (CIDR notation) for this VPC
-    Type: String
-    Default: 172.16.0.0/16
-
-  PublicSubnet1CIDR:
-    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
-    Type: String
-    Default: 172.16.10.0/24
-
-  PublicSubnet2CIDR:
-    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
-    Type: String
-    Default: 172.16.11.0/24
-
-  PublicSubnet3CIDR:
-    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
-    Type: String
-    Default: 172.16.12.0/24
-
-  PrivateSubnet1CIDR:
-    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
-    Type: String
-    Default: 172.16.20.0/24
-
-  PrivateSubnet2CIDR:
-    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
-    Type: String
-    Default: 172.16.21.0/24
-
-  PrivateSubnet3CIDR:
-    Description: Please enter the IP range (CIDR notation) for the private subnet in the third Availability Zone
-    Type: String
-    Default: 172.16.22.0/24
-
-  NatGateway: 
-    Description: Create NatGateway (Yes or No)?.
-    Default: "Yes"
-    Type: String
-    AllowedValues: 
-      - "Yes"
-
-  # Amazon OpenSearch Variables
-  DomainName:
-    Type: String
-    Default: "observability-aos"
-  
-  EngineVersion:
-    Description: Amazon OpenSearch Service - Version
-    Type: String
-    Default: "OpenSearch_1.3"
-  
-  InstanceType:
-    Description: Amazon OpenSearch Service - Instance Type
-    Type: String
-    Default: "r6g.large.search"
-  
   MasterUserName:
     Description: Amazon OpenSearch Service - Username
     Default: "aosadmin"
@@ -75,80 +12,10 @@ Parameters:
     Description: Amazon OpenSearch Service - Password
     Default: "P@ssw0rd!"
     Type: String
-  
-  # Reverse Proxy Variables
-  ReverseProxyInstanceType:
-   Description: Reverse Proxy EC2 instance type
-   Type: String
-   Default: t2.small
-   AllowedValues:
-    - t2.micro
-    - t2.small
-
-  ReverseProxySSHLocation:
-    Description: Allow SSH into Proxy instance
-    Type: String
-    Default: 172.16.0.0/16
-    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
-    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  
-  # Cloud9 Variables
-  EnvironmentNameC9:
-    Description: An environment name that is prefixed to resource names
-    Type: String
-    Default: "observability"
-  C9InstanceType:
-    Description: AWS Cloud9 instance type
-    Type: String
-    Default: t3.medium
-    AllowedValues:
-      - t2.micro
-      - t3.micro
-      - t3.small
-      - t3.medium
-    ConstraintDescription: Must be a valid Cloud9 instance type
-  C9EnvType: 
-    Description: Environment type.
-    Default: self
-    Type: String
-    AllowedValues: 
-      - self
-      - 3rdParty
-      - event-engine
-    ConstraintDescription: must specify self or 3rdParty.
-  OwnerArn: 
-    Type: String
-    Description: The Arn of the Cloud9 Owner to be set if 3rdParty deployment.
-    Default: ""
-  C9InstanceVolumeSize: 
-    Type: Number
-    Description: The Size in GB of the Cloud9 Instance Volume. 
-    Default: 30
-
-  # EKSClusterName:
-  #   Description: 'Please enter the EKS Cluster Name'
-  #   Type: String
-  #   Default: "clustereks01"
 
 Mappings:
   AWSInstanceType2Arch:
-    t1.micro:
-      Arch: HVM64
     t2.small:
-      Arch: HVM64
-    t2.medium:
-      Arch: HVM64
-    t2.large:
-      Arch: HVM64
-    m1.small:
-      Arch: HVM64
-    m1.medium:
-      Arch: HVM64
-    c1.medium:
-      Arch: HVM64
-    c3.large:
-      Arch: HVM64
-    c3.xlarge:
       Arch: HVM64
   AWSRegionArch2AMI:
     us-east-1:
@@ -162,66 +29,17 @@ Mappings:
     sa-east-1:
       HVM64: ami-00d10ca79f70a302a
 
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-    - Label:
-        default: "Environment Name"
-      Parameters:
-      - EnvironmentName
-    - Label:
-        default: "Network Configuration"
-      Parameters:
-      - VpcCIDR
-      - PublicSubnet1CIDR
-      - PublicSubnet2CIDR
-      - PublicSubnet3CIDR
-      - PrivateSubnet1CIDR
-      - PrivateSubnet2CIDR
-      - PrivateSubnet3CIDR
-      - NatGateway
-    - Label:
-        default: "OpenSearch Configuration"
-      Parameters:
-      - DomainName
-      - EngineVersion
-      - InstanceType
-      - MasterUserName
-      - MasterUserPassword
-    - Label:
-        default: "Reverse Proxy Configuration"
-      Parameters:
-      - ReverseProxyInstanceType
-      - ReverseProxySSHLocation
-    - Label:
-        default: "Cloud9 Configuration"
-      Parameters:
-      - EnvironmentNameC9
-      - C9InstanceType
-      - C9EnvType
-      - OwnerArn
-      - C9InstanceVolumeSize
-    # - Label:
-    #     default: "EKS Configuration"
-    #   Parameters:
-    #   - EKSClusterName
-
-Conditions: 
-  CreateNgwResource: !Equals [ !Ref NatGateway, "Yes" ]
-  Create3rdPartyResources: !Equals [ !Ref C9EnvType, 3rdParty ]
-  CreateEventEngineResources: !Equals [ !Ref C9EnvType, event-engine ]
-
 Resources:
 ######## VPC Template ########
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref VpcCIDR
+      CidrBlock: 172.16.0.0/16
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Ref EnvironmentName
+          Value: VPC-Observability
         - Key: IsUsedForDeploy
           Value: "True"
 
@@ -230,7 +48,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: !Ref EnvironmentName
+          Value: VPC-Observability
 
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -243,44 +61,44 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [ 0, !GetAZs '' ]
-      CidrBlock: !Ref PublicSubnet1CIDR
+      CidrBlock: 172.16.10.0/24
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
+          Value: VPC-Observability Public Subnet (AZ1)
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [ 1, !GetAZs  '' ]
-      CidrBlock: !Ref PublicSubnet2CIDR
+      CidrBlock: 172.16.11.0/24
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
+          Value: VPC-Observability Public Subnet (AZ2)
 
   PublicSubnet3:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [ 2, !GetAZs  '' ]
-      CidrBlock: !Ref PublicSubnet3CIDR
+      CidrBlock: 172.16.12.0/24
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ3)
+          Value: VPC-Observability Public Subnet (AZ3)
 
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [ 0, !GetAZs  '' ]
-      CidrBlock: !Ref PrivateSubnet1CIDR
+      CidrBlock: 172.16.20.0/24
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+          Value: VPC-Observability Private Subnet (AZ1)
         - Key: IsUsedForDeploy
           Value: "True"
 
@@ -289,11 +107,11 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [ 1, !GetAZs  '' ]
-      CidrBlock: !Ref PrivateSubnet2CIDR
+      CidrBlock: 172.16.21.0/24
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
+          Value: VPC-Observability Private Subnet (AZ2)
         - Key: IsUsedForDeploy
           Value: "True"
 
@@ -302,55 +120,25 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [ 2, !GetAZs  '' ]
-      CidrBlock: !Ref PrivateSubnet3CIDR
+      CidrBlock: 172.16.22.0/24
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Subnet (AZ3)
+          Value: VPC-Observability Private Subnet (AZ3)
         - Key: IsUsedForDeploy
           Value: "True"
 
   NatGateway1EIP:
     Type: AWS::EC2::EIP
-    Condition: CreateNgwResource
-    DependsOn: InternetGatewayAttachment
-    Properties:
-      Domain: vpc
-
-  NatGateway2EIP:
-    Type: AWS::EC2::EIP
-    Condition: CreateNgwResource
-    DependsOn: InternetGatewayAttachment
-    Properties:
-      Domain: vpc
-
-  NatGateway3EIP:
-    Type: AWS::EC2::EIP
-    Condition: CreateNgwResource
     DependsOn: InternetGatewayAttachment
     Properties:
       Domain: vpc
 
   NatGateway1:
     Type: AWS::EC2::NatGateway
-    Condition: CreateNgwResource
     Properties:
       AllocationId: !GetAtt NatGateway1EIP.AllocationId
       SubnetId: !Ref PublicSubnet1
-
-  NatGateway2:
-    Type: AWS::EC2::NatGateway
-    Condition: CreateNgwResource
-    Properties:
-      AllocationId: !GetAtt NatGateway2EIP.AllocationId
-      SubnetId: !Ref PublicSubnet2
-
-  NatGateway3:
-    Type: AWS::EC2::NatGateway
-    Condition: CreateNgwResource
-    Properties:
-      AllocationId: !GetAtt NatGateway3EIP.AllocationId
-      SubnetId: !Ref PublicSubnet3
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -358,7 +146,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Routes
+          Value: Public Routes
 
   DefaultPublicRoute:
     Type: AWS::EC2::Route
@@ -392,11 +180,10 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Routes (AZ1)
+          Value: Private Routes (AZ1)
 
   DefaultPrivateRoute1:
     Type: AWS::EC2::Route
-    Condition: CreateNgwResource
     Properties:
       RouteTableId: !Ref PrivateRouteTable1
       DestinationCidrBlock: 0.0.0.0/0
@@ -414,15 +201,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Routes (AZ2)
-
-  DefaultPrivateRoute2:
-    Type: AWS::EC2::Route
-    Condition: CreateNgwResource
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable2
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway2
+          Value: Private Routes (AZ2)
 
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -436,15 +215,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Routes (AZ3)
-
-  DefaultPrivateRoute3:
-    Type: AWS::EC2::Route
-    Condition: CreateNgwResource
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable3
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway3
+          Value: Private Routes (AZ3)
 
   PrivateSubnet3RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -462,11 +233,11 @@ Resources:
         - FromPort: 443
           IpProtocol: tcp
           ToPort: 443
-          CidrIp: !Ref VpcCIDR
+          CidrIp: 172.16.0.0/16
         - FromPort: 80
           IpProtocol: tcp
           ToPort: 80
-          CidrIp: !Ref VpcCIDR
+          CidrIp: 172.16.0.0/16
       SecurityGroupEgress:
         - Description: Allow all outbound traffic
           IpProtocol: "-1"
@@ -542,14 +313,11 @@ Resources:
       - OpenSearchIngressSecurityGroup
       - AWSServiceRoleForAmazonOpenSearchService
     Properties:
-      DomainName:
-        Ref: DomainName
-      EngineVersion:
-        Ref: EngineVersion
+      DomainName: observability-aos
+      EngineVersion: OpenSearch_1.3
       ClusterConfig:
         InstanceCount: '1'
-        InstanceType:
-          Ref: InstanceType
+        InstanceType: r6g.large.search
       DomainEndpointOptions:
         EnforceHTTPS: true
       NodeToNodeEncryptionOptions:
@@ -639,7 +407,7 @@ Resources:
         - !Ref 'AWS::Region'
         - !FindInMap 
           - AWSInstanceType2Arch
-          - !Ref ReverseProxyInstanceType
+          - "t2.small"
           - Arch
       UserData:
         Fn::Base64: !Sub |
@@ -690,7 +458,7 @@ Resources:
           systemctl enable nginx.service
       SecurityGroups:
         - !Ref ReverseProxyInstanceSecurityGroup
-      InstanceType: !Ref ReverseProxyInstanceType 
+      InstanceType: t2.small
 
   ReverseProxyInstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -700,11 +468,11 @@ Resources:
         - IpProtocol: tcp
           FromPort: '22'
           ToPort: '22'
-          CidrIp: !Ref ReverseProxySSHLocation
+          CidrIp: 172.16.0.0/16
         - IpProtocol: tcp
           FromPort: '443'
           ToPort: '443'
-          CidrIp: !Ref ReverseProxySSHLocation
+          CidrIp: 172.16.0.0/16
         - IpProtocol: tcp
           FromPort: '443'
           ToPort: '443'
@@ -756,6 +524,11 @@ Resources:
     Properties:
       RepositoryName: "client-service"
 
+  WebAppClientServiceRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "webapp-client-service"
+
 ######## Cloud9 ########
   C9Role:
     Type: AWS::IAM::Role
@@ -763,7 +536,7 @@ Resources:
       RoleName: observabilityworkshop-admin
       Tags:
         - Key: Environment
-          Value: !Sub ${EnvironmentNameC9}
+          Value: observability
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -855,7 +628,7 @@ Resources:
     Properties:
       Tags:
         - Key: Environment
-          Value: !Sub ${EnvironmentNameC9}
+          Value: observability
       ServiceToken:
         Fn::GetAtt:
         - C9BootstrapInstanceLambdaFunction
@@ -998,7 +771,7 @@ Resources:
     Properties: 
       Tags:
         - Key: Environment
-          Value: !Sub ${EnvironmentNameC9}
+          Value: observability
       DocumentType: Command
       Content: 
         schemaVersion: '2.2'
@@ -1027,7 +800,7 @@ Resources:
             - curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
             - sudo mv /tmp/eksctl /usr/local/bin
             - echo '=== Resizing the Instance volume'
-            - !Sub SIZE=${C9InstanceVolumeSize}
+            - !Sub SIZE=30
             - !Sub REGION=${AWS::Region}
             - |
               TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
@@ -1092,82 +865,18 @@ Resources:
     DependsOn: C9BootstrapAssociation
     Type: AWS::Cloud9::EnvironmentEC2
     Properties:
-      Description: !Sub  AWS Cloud9 instance for ${EnvironmentNameC9}
+      Description: AWS Cloud9 instance for observability
       SubnetId: !Ref PublicSubnet1
       #ConnectionType: CONNECT_SSM
 
       AutomaticStopTimeMinutes: 3600
-      InstanceType:
-        Ref: C9InstanceType
+      InstanceType: t3.medium
       Name: observabilityworkshop
-      OwnerArn: !If [Create3rdPartyResources, !Ref OwnerArn, !If [CreateEventEngineResources, !Join ['',['arn:aws:iam::',!Ref 'AWS::AccountId',':assumed-role/TeamRole/MasterKey']],!Ref "AWS::NoValue"]]
       Tags: 
         - Key: SSMBootstrap
           Value: Active
         - Key: Environment
-          Value: !Sub ${EnvironmentNameC9} 
-
-##EKs Cluster
-  # EKSIAMRole:
-  #   Type: 'AWS::IAM::Role'
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: 2012-10-17
-  #       Statement:  
-  #         - Effect: Allow
-  #           Principal:
-  #             Service:
-  #               - eks.amazonaws.com
-  #               - ec2.amazonaws.com  
-  #               - codebuild.amazonaws.com          
-  #           Action:
-  #             - 'sts:AssumeRole'
-  #     ManagedPolicyArns:
-  #       - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
-  #       - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
-  #       - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
-  #       - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-  #       - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-  #       - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
-  #       - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
-  #       - arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilderECRContainerBuilds        
-
-  # ClusterControlPlaneSecurityGroup:
-  #   Type: AWS::EC2::SecurityGroup
-  #   Properties:
-  #     GroupDescription: Cluster communication with worker nodes
-  #     VpcId: !Ref VPC
-
-  # EKSCluster:
-  #   Type: AWS::EKS::Cluster
-  #   Properties:
-  #     Name: !Ref EKSClusterName
-  #     RoleArn:
-  #       "Fn::GetAtt": ["EKSIAMRole", "Arn"]
-  #     ResourcesVpcConfig:
-  #       SecurityGroupIds:
-  #       - !Ref ClusterControlPlaneSecurityGroup
-  #       SubnetIds:
-  #       - !Ref PrivateSubnet1
-  #       - !Ref PrivateSubnet2
-  #       - !Ref PrivateSubnet3
-  #     Version: 1.21
-
-  # EKSNodegroup:
-  #   Type: 'AWS::EKS::Nodegroup'
-  #   DependsOn: EKSCluster
-  #   Properties:
-  #     ClusterName: !Ref EKSClusterName
-  #     NodeRole: !GetAtt EKSIAMRole.Arn
-  #     CapacityType: ON_DEMAND
-  #     ScalingConfig:
-  #       MinSize: 2
-  #       DesiredSize: 2
-  #       MaxSize: 2
-  #     Subnets:
-  #       - !Ref PrivateSubnet1
-  #       - !Ref PrivateSubnet2
-  #       - !Ref PrivateSubnet3
+          Value: observability
 
 ## Lambda Get PublicIP Information
   GetEC2PublicIP:
@@ -1302,6 +1011,13 @@ Outputs:
         - Ref: AWS::Region
     Export:
       Name: Cloud9IDE
+  AOSDomainArn:
+    Value:
+      'Fn::GetAtt':
+        - OpenSearchServiceDomain
+        - Arn
+    Export:
+      Name: AOSDomainArn
   AOSDomainEndpoint:
     Value:
       'Fn::GetAtt':
